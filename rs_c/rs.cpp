@@ -1,7 +1,6 @@
 #include "rs.h"
 
-
-
+//mm=4,nn=15,kk=11,tt=2,index_of[nn+1],gg[nn-kk+1],alpha_to[nn+1],pp[mm+1] 
 void encode_rs(int recd[nn], int data[kk], int  bb[nn-kk])
 /* take the string of symbols in data[i], i=0..(k-1) and encode systematically
 to produce 2*tt parity symbols in bb[0]..bb[2*tt-1]
@@ -18,7 +17,7 @@ Codeword is c(X) = data(X)*X**(nn-kk)+ b(X) */
 		bb[i] = 0 ;
 	for (i=kk-1; i>=0; i--)
 	{
-		feedback = index_of[data[i]^bb[nn-kk-1]] ;
+		feedback = index_of[data[i]^bb[nn-kk-1]] ;// ^ 按位异或
 		if (feedback != -1)
 		{ 
 			for (j=nn-kk-1; j>0; j--)
@@ -63,6 +62,12 @@ advantage of systematic encoding is that hopefully some of the information
 symbols will be okay and that if we are in luck, the errors are in the
 parity part of the transmitted codeword). Of course, these insoluble cases
 can be returned as error flags to the calling routine if desired. */
+/*假设我们已经收到分成recd[i]毫米位符号位，i= 0...（NN—1），并recd[i]是指数形式(即权力α).我们首先计算2*tt型取代α*i到rec(x)和评价，
+在[i]存储的特征，i= 1...2tt(让s[0]零为)。然后我们使用Berlekamp迭代找到错误位置多项式ELPelp[i]。如果elp的程度大于tt，我们不能纠正所有的错误
+因此，只有把信息符号错误找出。如果程度elp<=tt，我们用α**i，i= 1...n为elp得到根，因此，反根，错误位置数。如果错误数位于不平等的elp的程度，
+我们有超过tt的错误，并不能纠正他们。否则，我们然后解决错误值在错误位置和纠正错误。程序是在林和科斯特洛。已知错误的数量大到无法纠正，
+接收到的信息符号输出（系统编码的优点是希望有一些信息符号将是好的，如果我们运气好，错误是在所发送的码字的奇偶校验部分）。
+当然，这些能解决的情况下如果需要的话，可以作为错误标志返回给调用例程。 */
 {
 	int i,j,u,q ;
 	int elp[nn-kk+2][nn-kk], d[nn-kk+2], l[nn-kk+2], u_lu[nn-kk+2], s[nn-kk+1] ;
@@ -74,8 +79,8 @@ can be returned as error flags to the calling routine if desired. */
 		for (j=0; j<nn; j++)
 			if (recd[j]!=-1)
 			s[i] ^= alpha_to[(recd[j]+i*j)%nn] ; /* recd[j] in index form */
-/* convert syndrome from polynomial form to index form */
-		if (s[i]!=0) syn_error=1 ; /* set flag if non-zero syndrome => error */
+/* convert syndrome from polynomial form to index form (从多项式形式转换为指数形式)*/
+		if (s[i]!=0) syn_error=1 ; /* set flag if non-zero syndrome => error (设置标志，如果非零综合征= >错误)*/
 			s[i] = index_of[s[i]] ;
 	} ;
 	if (syn_error) /* if errors, try and correct */
@@ -87,7 +92,9 @@ ranging from -1 to 2*tt (see L&C), l[u] is the
 degree of the elp at that step, and u_l[u] is the difference between the
 step number and the degree of the elp.
 */
-/* initialise table entries */
+/*通过Berlekamp迭代算法计算错误位置多项式，随着林和科斯特洛的术语：d[u]是'mu'th差异，其中u = 'mu' + 1（希腊字母!），mu是步数
+范围从- 1到2*tt的（见信用证），l[u]是在这一步的elp的程度，和u_l[u]之间的差异步数和elp的程度。*/
+/* initialise table entries (初始化表条目)*/
 		d[0] = 0 ; /* index form */
 		d[1] = s[1] ; /* index form */
 		elp[0][0] = 0 ; /* index form */
